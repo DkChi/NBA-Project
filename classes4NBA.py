@@ -1,4 +1,7 @@
 import numpy as np
+from collections import namedtuple
+
+#Action = namedtuple('Action',['time','player'])
 
 class Action(object):
     ''' this class represents an action in the game '''
@@ -30,7 +33,7 @@ class Shot(Action):
         self.kind = kind
         self.made = made
         super(Shot, self).__init__(time, player)
-        #Action.__init__(self, time, player)
+        
     
     def get_kind(self):
         return self.kind
@@ -55,7 +58,6 @@ class Shot(Action):
 class Assist(Action):
     def __init__(self, time=0, player=''):
         super(Assist, self).__init__(time, player)
-        #Action.__init__(self, time, player)
 
 
 class Foul(Action):
@@ -63,7 +65,6 @@ class Foul(Action):
     def __init__(self, kind, time=0, player=''):
         self.kind = kind
         super(Foul, self).__init__(time, player)
-        #Action.__init__(self, time, player)
             
     def get_kind(self):
         return self.kind
@@ -77,7 +78,6 @@ class Rebound(Action):
     def __init__(self, kind, time=0, player=''):
         self.kind = kind
         super(Rebound, self).__init__(time, player)
-        #Action.__init__(self, time, player)
             
     def get_kind(self):
         return self.kind
@@ -109,7 +109,7 @@ class Turnover(Action):
     ''' '''
     def __init__(self, kind, time=0, player=''):
         self.kind = kind
-        Action.__init__(self, time, player)
+        super(Turnover, self).__init__(time, player)
             
     def get_kind(self):
         return self.kind
@@ -122,21 +122,19 @@ class Steal(Action):
     ''' '''           
     def __init__(self, time=0, player=''):
         super(Steal, self).__init__(time, player)
-        #Action.__init__(self, time, player)
 
 
 class Block(Action):
     ''' '''           
     def __init__(self, time=0, player=''):
         super(Block, self).__init__(time, player)
-        #Action.__init__(self, time, player)
 
 
 class FreeThrow(Action):
     ''' '''
     def __init__(self, time=0, player='', made=False):
         self.made = made
-        Action.__init__(self, time, player)
+        super(FreeThrow, self).__init__(time, player)
         
     def is_made(self):
         return self.made
@@ -200,7 +198,6 @@ def fix_timing(times):
 def min2time(t):
     '''Converts the time from string in the format MM:SS to seconds'''
     if isinstance(t, list):
-    #if type(t) is list:
         return [min2time(i) for i in t]
         
     elif type(t) is str:
@@ -242,9 +239,7 @@ class Game(object):
     def loadActions(self, times, home, away):
         ''' I copied this part from the TF file'''
         hTeam = True
-        #times = fix_timing(times)
         for i, cur_time in enumerate(times):
-        #for i in xrange(len(times)):
         #for cur_time, cur_home, cur_away in self.iter_time_vals(times, home, away):
             if home[i] != '&':
                 current = str.strip(home[i])[:-1]
@@ -356,7 +351,7 @@ class Game(object):
                     self.away_actions.append(a)
 
 
-    def to_string(self):
+    def __str__(self):
         return self.date+';\n'+self.homeTeam+':'+self.home_actions+';\n'+self.awayTeam+':'+self.away_actions
         
     def title(self):
