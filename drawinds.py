@@ -36,16 +36,16 @@ Q_LEN = 12
 #rf.shots4time(player='Anthony', team='NYK', s_date='20141001')
 
 
-#tf.write_all_data(s_date='20150514', f_date='20150619')
+tf.write_all_data(s_date='20100101', f_date='20150619')
 #rf.starting_5_shots(team='ATL', starting_5=['Carroll', 'Millsap', 'Horford', 'Korver', 'Teague'], s_date='20141001')
 
 #rf.shots4time('Curry', 'GSW','20141001')
-g = tf.create_Game('20150609-GSWCLE.txt')
-print g.get_date()
-print g.get_Home_Team()
-print g.get_Away_Team()
-print g.get_Home_Actions()
-print g.get_Away_Actions()
+#g = tf.create_Game('20150609-GSWCLE.txt')
+#print g.get_date()
+#print g.get_Home_Team()
+#print g.get_Away_Team()
+#print g.get_Home_Actions()
+#print g.get_Away_Actions()
 '''
 actions_1, played_games_1 = rf.action_raster24('Curry', 'GSW', action=c.Shot)
 actions_2, played_games_2 = rf.action_raster24('Thompson', 'GSW', action=c.Shot)
