@@ -1,149 +1,18 @@
 import numpy as np
 from collections import namedtuple
 
-#Action = namedtuple('Action',['time','player'])
+Action = namedtuple('Action', ['time','player'])
+Shot = namedtuple('Shot', Action._fields+('kind','made',))
+FreeThrow = namedtuple('FreeThrow', Action._fields+('made',))
+Rebound = namedtuple('Rebound', Action._fields+('kind',))
+Foul = namedtuple('Foul', Action._fields+('kind',))
+Turnover = namedtuple('Turnover', Action._fields+('kind',))
+Assist = namedtuple('Assist', Action._fields)
+Block = namedtuple('Block', Action._fields)
+Steal = namedtuple('Steal', Action._fields)
+Sub = namedtuple('Sub', Action._fields+('player_in',))
 
-class Action(object):
-    ''' this class represents an action in the game '''
-    
-    def __init__(self, time=0, player=''):
-        self.time = time
-        self.player = player
-    
-    def get_time(self):
-        ''' returns the time of the action'''
-        return self.time
-        
-    def get_player(self):
-        return self.player
-        
-    def set_player(self, new_player):
-        self.player = new_player
-    
-    def set_time(self, new_time):
-        self.time = new_time
-
-    def __str__(self):
-        return '{}:{}'.format(self.player, self.time)
-
-
-class Shot(Action):
-    ''' This Class represent a shot '''
-    def __init__(self, kind, time=0, player='', made=False):
-        self.kind = kind
-        self.made = made
-        super(Shot, self).__init__(time, player)
-        
-    
-    def get_kind(self):
-        return self.kind
-        
-    def is_made(self):
-        return self.made
-
-    def set_kind(self, new_kind):
-        self.kind = new_kind
-        
-    def set_status(self, status):
-        self.made = status
-
-    def __str__(self):
-        if self.made:
-            m = 'Made'
-        else:
-            m = 'Missed'
-        return str(self.time)+"-"+self.player+' '+self.kind+":"+m
-
-
-class Assist(Action):
-    def __init__(self, time=0, player=''):
-        super(Assist, self).__init__(time, player)
-
-
-class Foul(Action):
-    ''' '''
-    def __init__(self, kind, time=0, player=''):
-        self.kind = kind
-        super(Foul, self).__init__(time, player)
-            
-    def get_kind(self):
-        return self.kind
-        
-    def set_kind(self, new_kind):
-        self.kind = new_kind
-
-
-class Rebound(Action):
-    ''' '''    
-    def __init__(self, kind, time=0, player=''):
-        self.kind = kind
-        super(Rebound, self).__init__(time, player)
-            
-    def get_kind(self):
-        return self.kind
-        
-    def set_kind(self, new_kind):
-        self.kind = new_kind
-
-
-class Sub(Action):        
-    ''' '''
-    def __init__(self, time=0, player_out='', player_in=''):
-        self.player_in = player_in
-        Action.__init__(self, time, player_out)
-    
-    def get_player_in(self):
-        return self.player_in
-        
-    def get_player_out(self):
-        return self.player
-        
-    def set_player_in(self, new_player):
-        self.player_in = new_player    
-    
-    def __str__(self):
-        return str(self.time)+" - "+self.player+" replaced by "+self.player_in
-
-
-class Turnover(Action):
-    ''' '''
-    def __init__(self, kind, time=0, player=''):
-        self.kind = kind
-        super(Turnover, self).__init__(time, player)
-            
-    def get_kind(self):
-        return self.kind
-        
-    def set_kind(self, new_kind):
-        self.kind = new_kind
-
-
-class Steal(Action):
-    ''' '''           
-    def __init__(self, time=0, player=''):
-        super(Steal, self).__init__(time, player)
-
-
-class Block(Action):
-    ''' '''           
-    def __init__(self, time=0, player=''):
-        super(Block, self).__init__(time, player)
-
-
-class FreeThrow(Action):
-    ''' '''
-    def __init__(self, time=0, player='', made=False):
-        self.made = made
-        super(FreeThrow, self).__init__(time, player)
-        
-    def is_made(self):
-        return self.made
-        
-    def set_status(self, status):
-        self.made = status
 #-------------------------------------------------
-
-
 class ActionTiming(object):
     ''' This class represent action and its timing (should be used for 24 sec clock) '''
 
@@ -165,7 +34,9 @@ class ActionTiming(object):
 
     def __str__(self):
         return str(self.timing)+':'+str(self.action)
-#------------------------------------------------
+
+#-------------------------------------------------
+
 
 Q_LEN = 12*60
 OT_LEN = 5*60
@@ -208,7 +79,7 @@ def min2time(t):
 class Game(object):
     ''' This Class Represent a Single game'''
     
-    def __init__(self, homeTeam='HHH', awayTeam='AAA', date='10010101'):
+    def __init__(self, homeTeam='HHH',awayTeam='AAA',date='10010101'):
         self.homeTeam = homeTeam
         self.awayTeam = awayTeam
         self.date = date
@@ -238,16 +109,17 @@ class Game(object):
             
     def loadActions(self, times, home, away):
         ''' I copied this part from the TF file'''
-        hTeam = True
+        h_team = True
         for i, cur_time in enumerate(times):
         #for cur_time, cur_home, cur_away in self.iter_time_vals(times, home, away):
             if home[i] != '&':
                 current = str.strip(home[i])[:-1]
-                hTeam = True
-                #actions = self.home_actions
+                h_team = True
+                actions = self.home_actions
             elif away[i] != '&':
                 current = str.strip(away[i])[:-1]
-                hTeam = False
+                h_team = False
+                actions = self.away_actions 
             else:
                 continue # empty line
             
@@ -255,55 +127,40 @@ class Game(object):
             player = current[:first_space]
             current = current[first_space+1:]
             
-            if "Turnover" in current:
+            
+            if 'Turnover' in current:
                 colon = current.find(':')
                 barket = current.find('(')
-                a = Turnover(current[colon+2:barket-1], times[i], player)
-                if hTeam:
-                    self.home_actions.append(a)
-                else:
-                    self.away_actions.append(a)
+                action = Turnover(times[i], player, current[colon+2:barket-1])
+                actions.append(action)
                 barket = current.find(')')
                 current = current[barket+2:]
 
+
                 if 'ST' in current:
                     a = Steal(times[i], find_second_action(current))
-                    if not hTeam:
+                    if not h_team:
                         self.home_actions.append(a)
                     else: 
                         self.away_actions.append(a)
    
             elif 'Substitution' in current:
                 last_space = current.rfind(' ')
-                a = Sub(cur_time, player, current[last_space+1:])
-                if hTeam :
-                    self.home_actions.append(a)
-                else:
-                    self.away_actions.append(a)
+                action = Sub(cur_time, player, current[last_space+1:])
+                actions.append(action)
                  
             elif 'shot' in current or 'Shot' in current:
                 colon = current.find(':')
-                action = Shot(current[:colon], cur_time, player)
-                if 'Made' in current:
-                    action.made = True
-                else:
-                    action.made = False
-                    
-                if hTeam :
-                    self.home_actions.append(action)
-                else:
-                    self.away_actions.append(action)
+                made = 'Made' in current
+                action = Shot(cur_time, player, current[:colon], made)   
+                actions.append(action)    
 
                 if 'AST' in current:
-                    a = Assist(cur_time, find_second_action(current))
-                    if hTeam :
-                        self.home_actions.append(a)
-                    else:
-                        self.away_actions.append(a)
-
+                    actions.append(Assist(cur_time, find_second_action(current)))
+                    
                 elif 'BLK' in current:
                     a = Block(cur_time, find_second_action(current))
-                    if not hTeam:
+                    if not h_team:
                         self.home_actions.append(a)
                     else: 
                         self.away_actions.append(a)
@@ -311,44 +168,31 @@ class Game(object):
             elif 'PF' in current:
                 colon = current.find(':')
                 barket = current.find('(')
-                a = Foul(current[colon+2:barket-1], cur_time, player)
-                if hTeam:
-                    self.home_actions.append(a)
-                else:
-                    self.away_actions.append(a)
+                actions.append(Foul(cur_time, player, current[colon+2:barket-1]))
 
             elif 'Free Throw' in current:
                 #first_space = current.find(' ')
-                action = FreeThrow(cur_time, player)
-                if not 'Missed' in current:
-                    action.made = True
-                else:
-                    action.made = False
+                made = 'Missed' not in current
+                actions.append(FreeThrow(cur_time, player, made))
                     
-                if hTeam:
-                    self.home_actions.append(action)
-                else:
-                    self.away_actions.append(action)
-
+                
             elif 'Rebound' in current:
                 if home[i] != '&':
-                    hTeam = True
+                    h_team = True
                     if home[i-1] == '&':
                         kind = 'Def'
                     else:
                         kind = 'Off'
                 else:
-                    hTeam = False
+                    h_team = False
                     if home[i-1] == '&':
                         kind = 'Off'
                     else:
                         kind = 'Def'
                 #first_space = current.find(' ')
-                a = Rebound(kind, cur_time, player)
-                if hTeam:
-                    self.home_actions.append(a)
-                else:
-                    self.away_actions.append(a)
+                actions.append(Rebound(cur_time, player, kind))
+                    
+            
 
 
     def __str__(self):

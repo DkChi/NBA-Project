@@ -36,7 +36,7 @@ Q_LEN = 12
 #rf.shots4time(player='Anthony', team='NYK', s_date='20141001')
 
 
-tf.write_all_data(s_date='20100101', f_date='20150619')
+#tf.write_all_data(s_date='20150219', f_date='20150609')
 #rf.starting_5_shots(team='ATL', starting_5=['Carroll', 'Millsap', 'Horford', 'Korver', 'Teague'], s_date='20141001')
 
 #rf.shots4time('Curry', 'GSW','20141001')

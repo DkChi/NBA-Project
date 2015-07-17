@@ -338,7 +338,18 @@ def specific_team(team='NYK', path='D:\Gal\Work\Results', home=True, away=True):
 
 def date2numbers(date):
     ''' date is by the format  MONTH DAY, YEAR'''
-    months = {'January': 1, 'February': 2, 'March': 3, 'April': 4, 'May': 5, 'June': 6, 'July': 7, 'August': 8, 'September': 9, 'October': 10, 'November': 11, 'December': 12}
+    months = {'January': 1,
+              'February': 2,
+              'March': 3,
+              'April': 4,
+              'May': 5,
+              'June': 6,
+              'July': 7,
+              'August': 8,
+              'September': 9,
+              'October': 10,
+              'November': 11,
+              'December': 12}
     first_space = date.find(' ')
     m = str(months[date[:first_space]])
     if int(m) < 10:

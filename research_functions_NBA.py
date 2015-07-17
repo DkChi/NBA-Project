@@ -1,8 +1,6 @@
-
-import re
+from collections import Counter
 import numpy as np
 import matplotlib.pyplot as mpl
-
 import os
 import sys
 if 'D:\Gal\Work' not in sys.path :
@@ -12,7 +10,6 @@ import technical_functions_NBA as tf
 
 Q_LEN = 12*60
 OT_LEN = 5*60
-
 
 
 def quarter_time(q=0):
@@ -29,7 +26,7 @@ def time_on_court(player, actions):
     q, t_in, flag = 1, -1, False
 
     for a in actions:
-        t = float(a.get_time())
+        t = float(a.time)
         flag = False
 
         if t > quarter_time(q):
@@ -43,7 +40,7 @@ def time_on_court(player, actions):
             t_in = -1
             q += 1
 
-        if a.get_player() == player and t_in < 0:  # the player came in between the quarters
+        if a.player == player and t_in < 0:  # the player came in between the quarters
             t_in = quarter_time(q-1)
 
         if type(a) is c.Sub:
@@ -85,24 +82,33 @@ def time_on_court(player, actions):
 
 def worth_points(this_shot):
     ''' '''
-    p = 0
-    if this_shot.is_made():
-        if type(this_shot) is c.FreeThrow:
-            p=1
-        elif not this_shot.kind=='3pt Shot':
-            p=2
-        else :            
-            p=3
-    return p
+    if not this_shot.made:
+        return 0  
+        
+    elif type(this_shot) is c.FreeThrow:
+        return 1
+        
+    elif not this_shot.kind=='3pt Shot':
+        return 2
+        
+    else:            
+        return 3
+    
 
 def action_when_on_court(action, player, actions):
     ''' '''
     times = time_on_court(player, actions)
     for t in times:
-        gt = float(action.get_time())
+        gt = float(action.time)
         if gt>np.array(t[0]) and gt<np.array(t[1]):
             return True
     return False        
+
+def update_current_score(cnt, shot):
+    cnt['score'] += worth_points(shot)
+    cnt['index'] += 1
+    return cnt
+
 
 def scores(game):
     ''' 
@@ -111,35 +117,31 @@ def scores(game):
     home_shots = tf.leave_these_actions(game.get_Home_Actions(), [c.Shot, c.FreeThrow])
     away_shots = tf.leave_these_actions(game.get_Away_Actions(), [c.Shot, c.FreeThrow])
     times, home_scores, away_scores = [],[],[]
-    hp, ap, away_counter, home_counter = 0, 0, 0, 0
+    cnt_home, cnt_away = Counter(), Counter()
 
     for i in xrange (len(away_shots)+len(home_shots)):
-        if home_counter < len(home_shots) and away_counter < len(away_shots):
+        if cnt_home['index'] < len(home_shots) and cnt_away['index'] < len(away_shots):
             
-            if float(away_shots[away_counter].get_time()) > float(home_shots[home_counter].get_time()) :
-                this_shot = home_shots[home_counter]
-                hp += worth_points(this_shot)
-                home_counter += 1
+            if float(away_shots[cnt_away['index']].time) > float(home_shots[cnt_home['index']].time) :
+                this_shot = home_shots[cnt_home['index']]
+                cnt_home = update_current_score(cnt_home, this_shot)
                 
             else:
-                this_shot = away_shots[away_counter]
-                ap += worth_points(this_shot)
-                away_counter += 1
+                this_shot = away_shots[cnt_away['index']]
+                cnt_away = update_current_score(cnt_away, this_shot)
                 
-        elif away_counter == len(away_shots):
-                this_shot = home_shots[home_counter]
-                hp += worth_points(this_shot)
-                home_counter += 1
+        elif cnt_away['index'] == len(away_shots):
+            this_shot = home_shots[cnt_home['index']]
+            cnt_home = update_current_score(cnt_home, this_shot)
                 
-        else :
-            this_shot = away_shots[away_counter]
-            ap += worth_points(this_shot)
-            away_counter += 1
-        
-        #print this_shot.get_time(),hp,ap, type(this_shot)
-        times.append(this_shot.get_time())
-        home_scores.append(hp)
-        away_scores.append(ap)
+        else:
+            this_shot = away_shots[cnt_away['index']]
+            cnt_away = update_current_score(cnt_away, this_shot)
+                    
+        #print this_shot.time,hp,ap, type(this_shot)
+        times.append(this_shot.time)
+        home_scores.append(cnt_home['score'])
+        away_scores.append(cnt_away['score'])
 
     return times, home_scores, away_scores
 
@@ -154,7 +156,7 @@ def plot_diff(g):
     '''plots the point difference between the home team and the visitor team '''
       
     diff_points = diff(g)
-    mpl.plot(diff_points[0],diff_points[1], 'b')
+    mpl.plot(diff_points[0], diff_points[1], 'b')
     
     limits = []  
     if min(diff_points[1])<0 :
@@ -192,14 +194,14 @@ def shooting_stats(shots, players=[]):
     dic = {}
     for s in shots:
         for p in players:
-            if s.get_player() == p:
-                shot_kind = s.get_kind()
+            if s.player == p:
+                shot_kind = s.kind
                 if not dic.has_key(shot_kind):
                     dic[shot_kind] = [0, 0]
                 
                 dic[shot_kind][0] += 1
-                if s.is_made():
-                    dic[s.get_kind()][1] += 1
+                if s.made:
+                    dic[s.kind][1] += 1
     return dic  
 
 
@@ -214,15 +216,15 @@ def shooting_stats_over_games(players=['Felton'], team='NYK', s_date='10000101',
             data = tf.create_data(im[0], im[1], im[2])
             for d in data:
                 for p in players:
-                    if d.get_player() == p and type(d) is c.Shot:
+                    if d.player == p and type(d) is c.Shot:
                         #print g         
-                        shot_kind = d.get_kind()
+                        shot_kind = d.kind
                         if not dic.has_key(shot_kind):
                             dic[shot_kind] = [0, 0]
                     
                         dic[shot_kind][0] += 1
-                        if d.is_made():
-                            dic[d.get_kind()][1] += 1
+                        if d.made:
+                            dic[d.kind][1] += 1
     return dic  
 
 
@@ -231,9 +233,9 @@ def free_throws_stats(freeThrows, players=[]):
     attempted, made = 0, 0
     for ft in freeThrows:
         for p in players:
-            if ft.get_player() == p:
+            if ft.player == p:
                 attempted += 1
-                if ft.is_made():
+                if ft.made:
                     made += 1
     return made, attempted
 
@@ -248,15 +250,15 @@ def shooting_other(shooting_player='Parker', over_player='Duncan', team='SAS', s
             im = tf.read_from_file(path+'\\'+g)
             data = tf.create_data(im[0], im[1], im[2])
             for d in data:
-                if d.get_player() == shooting_player and type(d) is c.Shot and action_when_on_court(d, over_player, data):
+                if d.player == shooting_player and type(d) is c.Shot and action_when_on_court(d, over_player, data):
                     #print g         
-                    shot_kind = d.get_kind()
+                    shot_kind = d.kind
                     if not dic.has_key(shot_kind):
                         dic[shot_kind] = [0, 0]
                 
                     dic[shot_kind][0] += 1
-                    if d.is_made():
-                        dic[d.get_kind()][1] += 1
+                    if d.made:
+                        dic[d.kind][1] += 1
     return dic      
 
 
@@ -282,11 +284,11 @@ def specific_shot_stats(shot_type='Jump Shot', players=['Felton'], team='NYK', s
             data = tf.create_data(im[0], im[1], im[2])
             for d in data:
                 for p in players:
-                    if d.get_player() == p and type(d) is c.Shot:
+                    if d.player == p and type(d) is c.Shot:
                         #print g         
-                        if shot_type == d.get_kind():
+                        if shot_type == d.kind:
                             this_game[0] += 1
-                            if d.is_made():
+                            if d.made:
                                 this_game[1] += 1
         res.append(this_game)
     return res
@@ -305,9 +307,9 @@ def shots_made_raster(players=['Duncan'], team='SAS', s_date='10000101', f_date=
             data = tf.create_data(im[0], im[1], im[2])
             for d in data:
                 for p in players:
-                    if d.get_player() == p and type(d) is c.Shot:
-                            if d.is_made():
-                                shots.append(d.get_time())
+                    if d.player == p and type(d) is c.Shot:
+                            if d.made:
+                                shots.append(d.time)
                                 played_games.append(i)     
 
     return shots, played_games
@@ -326,8 +328,8 @@ def actions_raster(players=['Duncan'], team='SAS', s_date='10000101', f_date='21
             data = tf.create_data(im[0], im[1], im[2])
             for d in data:
                 for p in players:
-                    if d.get_player() == p and type(d) is action:
-                                actions.append(d.get_time())
+                    if d.player == p and type(d) is action:
+                                actions.append(d.time)
                                 played_games.append(i)     
 
     return actions, played_games
@@ -398,7 +400,7 @@ def action_timing(actions):
     result = []
 
     for a in actions:
-        t = float(a.get_time())
+        t = float(a.time)
 
         if t > quarter_time(q):
             t_last = quarter_time(q)
@@ -415,7 +417,7 @@ def action_timing(actions):
 
         if type(a) in [c.Rebound, c.Steal, c.Turnover, c.Shot, c.FreeThrow, c.Foul]:
             if type(a) is c.Shot:
-                if a.is_made():
+                if a.made:
                     t_last = t
 
             elif type(a) is c.Foul and result[-1].get_timing() > 10:
@@ -442,7 +444,7 @@ def action_raster24(player='Duncan', team='SAS', s_date='10000101', f_date='2100
             data = tf.create_data(im[0], im[1], im[2])
             at = action_timing(data)
             for t in at:
-                if type(t.get_action()) is action and t.get_action().get_player() == player:
+                if type(t.get_action()) is action and t.get_action().player == player:
                     actions.append(t)
                     played_games.append(i)
     return actions, played_games
@@ -588,9 +590,9 @@ def starting_5_shots(team='SAS', starting_5=['Parker', 'Green', 'Leonard', 'Dunc
 #DEBUG
 #im = tf.read_from_file(r'D:\Gal\Work\Results\20101005-DETMIA.txt')
 #s = scores(im[2], im[1])
-#g = tf.create_Game('20101005-DETMIA.txt')
-#plot_scores(g)
-#plot_diff(g)
+g = tf.create_Game('20101005-DETMIA.txt')
+plot_scores(g)
+plot_diff(g)
 
 '''
 t_1 = time_out_histogram('MIA')
