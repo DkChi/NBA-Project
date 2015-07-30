@@ -13,7 +13,7 @@ Q_LEN = 12
 #p = tf.get_text('http://www.nba.com/games/20150514/HOULAC/gameinfo.html')
 
 #im = tf.import_data(p)
-#print rf.shooting_stats_over_games(['Duncan'], 'SAS', f_date='20110701')
+print rf.shooting_stats_over_games(['Duncan'], 'SAS', f_date='20110701')
 #for i in s :
 #   print i, s[i], float(s[i][1])/s[i][0]*100
 #DEBUG
@@ -66,7 +66,7 @@ mpl.xlim([0, 26])
 '''
 '''
 mpl.hold(1)
-mpl.figure(2)
+mpl.figure(1)
 colors = ['r', 'gray', 'b', 'gray', 'gray', 'm', 'gray', 'g']
 actions, played_games = [0]*8, [0]*8
 s_date = '20141030'

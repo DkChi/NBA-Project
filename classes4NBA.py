@@ -130,9 +130,8 @@ class Game(object):
             
             if 'Turnover' in current:
                 colon = current.find(':')
-                barket = current.find('(')
-                action = Turnover(times[i], player, current[colon+2:barket-1])
-                actions.append(action)
+                barket = current.find('(') 
+                actions.append(Turnover(times[i], player, current[colon+2:barket-1]))
                 barket = current.find(')')
                 current = current[barket+2:]
 
@@ -145,15 +144,13 @@ class Game(object):
                         self.away_actions.append(a)
    
             elif 'Substitution' in current:
-                last_space = current.rfind(' ')
-                action = Sub(cur_time, player, current[last_space+1:])
-                actions.append(action)
+                last_space = current.rfind(' ') 
+                actions.append(Sub(cur_time, player, current[last_space+1:]))
                  
-            elif 'shot' in current or 'Shot' in current:
+            elif 'Shot' in current or 'shot' in current:
                 colon = current.find(':')
-                made = 'Made' in current
-                action = Shot(cur_time, player, current[:colon], made)   
-                actions.append(action)    
+                made = 'Made' in current  
+                actions.append(Shot(cur_time, player, current[:colon], made))    
 
                 if 'AST' in current:
                     actions.append(Assist(cur_time, find_second_action(current)))

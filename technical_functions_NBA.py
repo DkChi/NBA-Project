@@ -22,7 +22,7 @@ OT_LEN = 5*60
 # ______________________________________
 
 
-def get_text(page='http://www.nba.com/games/20140529/OKCSAS/gameinfo.html'):
+def get_text(page):
     try:
         return urllib2.urlopen(page).read()
     finally:
@@ -31,7 +31,7 @@ def get_text(page='http://www.nba.com/games/20140529/OKCSAS/gameinfo.html'):
 # now I need a function to run over pages from the type http://www.nba.com/gameline/20140501/
 
 
-def import_data(text=get_text('http://www.nba.com/games/20130618/SASMIA/gameinfo.html')):
+def import_data(text):
     '''
     This function downloads the play by play data from a specific web page
     '''
@@ -108,8 +108,7 @@ def merge_actions(al1, al2):
             flag = 1    
         elif al1[i1].get_time() < al2[i2].get_time():
             flag = 1
-                
-            
+                    
         if flag == 1 :
             res.append(al1[i1])
             i1 += 1
@@ -324,17 +323,31 @@ def create_data(times, home, away):
     return data         
 
 
-def specific_team(team='NYK', path='D:\Gal\Work\Results', home=True, away=True):
+def specific_team(team, path='D:\Gal\Work\Results', home=True, away=True):
     ''' This function return a list of all the files that that represent game of a specific team '''
     NAME_LEN = 3
     files = os.listdir(path)
     res = []
     for f in files:
         h = f.find('-')
-        if (f[h+1:h+NAME_LEN+1] == team and away) or (f[h+NAME_LEN+1:h+NAME_LEN+NAME_LEN+1] == team and home):
+        nxt = h+NAME_LEN+1
+        if (f[h+1:nxt] == team and away) or (f[nxt:nxt+NAME_LEN] == team and home):
             res.append(f)
     return res
 
+
+def all_games_per_team(team, path='D:\Gal\Work\Results', home=True, away=True):
+    res = []
+    list_of_home_games = specific_team(team, path, home, False)
+    list_of_away_games = specific_team(team, path, False, away)
+    for g in list_of_home_games:
+        res.append(create_game_from_file(g))
+        
+    for g in list_of_away_games:
+        res.append(create_game_from_file(g))
+        
+    return res
+    
 
 def date2numbers(date):
     ''' date is by the format  MONTH DAY, YEAR'''
@@ -382,8 +395,7 @@ def all_players():
 
 def active_players(players):
     ''' Finds all the Active players in the NBA'''
-    ac_players = []
-    his_players = []
+    ac_players, his_players = [], []
     for p in players:
         #print '***', p # DEBUG
         name_for_net = str.lower(p[p.find(' ')+1:]+'_'+p[:p.find(',')])
@@ -437,7 +449,10 @@ def glue_arrays(a, i=0):
 
 
 def break_it(a, i=1):
-    return list(range(int(a[0]), int(a[1]), i))
+    '''Breaks the list in the Arithmetic progression with the step of i 
+    Example: break_it([1,5],1) >>>> [1,2,3,4,5] '''
+    
+    return list(range(int(a[0]), int(a[1]+1), i))
 
 
 def sort_and_remove_duplicates(a):
@@ -468,8 +483,8 @@ def distance(a, b):
     return result
 
 
-def bring_players_from_espn(text=get_text('http://espn.go.com/nba/players/_/position/pg')):
-    ''' '''
+def bring_players_from_espn(text):
+    ''' built for pages like http://espn.go.com/nba/players/_/position/pg '''
     regex = r'"http://espn.go.com/nba/player/_/id(.+?)</a>'
     pattern = re.compile(regex)
     players_1 = re.findall(pattern, text)
@@ -491,13 +506,24 @@ def leave_these_actions(actions, a=[c.Shot]):
 
 #_----------------------------________________________
 
-def create_Game(f_name, path='D:\Gal\Work\Results'):
+def create_game_from_file(f_name, path='D:\Gal\Work\Results'):
     ''' '''
     barket = f_name.find('-') 
     game = c.Game(f_name[barket+4:barket+7],f_name[barket+1:barket+4],f_name[:barket])
     r = read_from_file(path+'\\'+f_name)
     game.loadActions(r[0],r[1],r[2])
     return game
+    
+def relevant_actions(team, path='D:\Gal\Work\Results', home=True, away=True, s_date='10000101', f_date='21001231'):
+    games4team = all_games_per_team(team, path, home, away)
+    data = []
+    for g in games4team:
+        if g.date > s_date and g.date < f_date:
+            if g.get_Home_Team() == team:
+                data.append(g.get_Home_Actions())
+            else:
+                data.append(g.get_Away_Actions())
+    return data    
     
 #________________________________
 # MAIN

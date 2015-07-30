@@ -44,7 +44,7 @@ def time_on_court(player, actions):
             t_in = quarter_time(q-1)
 
         if type(a) is c.Sub:
-            if a.get_player_out() == player:  # the player came out
+            if a.player == player:  # the player came out
                 #print 2, t_in, t, a # DEBUG
                 if t_in < 0:
                     if len(result) > 0:
@@ -61,7 +61,7 @@ def time_on_court(player, actions):
                         result.append([t_in, t])
                 t_in = -1
 
-            elif a.get_player_in() == player:  # the player came in
+            elif a.player_in == player:  # the player came in
                 if t_in >= 0:
                     if len(result) > 0:
                         if not t_in < result[-1][1]:
@@ -207,24 +207,19 @@ def shooting_stats(shots, players=[]):
 
 def shooting_stats_over_games(players=['Felton'], team='NYK', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
     '''The function of dates nedd to added '''
-    games = tf.specific_team(team, path)
-    dic = {}
-    for g in games:
-        h = g.find('-')
-        if g[:h] > s_date and g[:h] < f_date :
-            im = tf.read_from_file(path+'\\'+g)
-            data = tf.create_data(im[0], im[1], im[2])
-            for d in data:
-                for p in players:
-                    if d.player == p and type(d) is c.Shot:
-                        #print g         
-                        shot_kind = d.kind
-                        if not dic.has_key(shot_kind):
-                            dic[shot_kind] = [0, 0]
+    actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
+    dic = {}    
+    for actions in actions_per_game:
+        for a in actions:
+            for p in players:
+                if a.player == p and type(a) is c.Shot:
+                    shot_kind = a.kind
+                    if not dic.has_key(shot_kind):
+                        dic[shot_kind] = [0, 0]
                     
-                        dic[shot_kind][0] += 1
-                        if d.made:
-                            dic[d.kind][1] += 1
+                    dic[shot_kind][0] += 1
+                    if a.made:
+                        dic[a.kind][1] += 1
     return dic  
 
 
@@ -241,24 +236,19 @@ def free_throws_stats(freeThrows, players=[]):
 
 
 def shooting_other(shooting_player='Parker', over_player='Duncan', team='SAS', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
-    ''' This function calculates the shots of spesific player when other player is on the court '''
-    games = tf.specific_team(team, path)
-    dic = {}
-    for g in games:
-        h = g.find('-')
-        if g[:h] > s_date and g[:h] < f_date :
-            im = tf.read_from_file(path+'\\'+g)
-            data = tf.create_data(im[0], im[1], im[2])
-            for d in data:
-                if d.player == shooting_player and type(d) is c.Shot and action_when_on_court(d, over_player, data):
-                    #print g         
-                    shot_kind = d.kind
-                    if not dic.has_key(shot_kind):
-                        dic[shot_kind] = [0, 0]
-                
-                    dic[shot_kind][0] += 1
-                    if d.made:
-                        dic[d.kind][1] += 1
+    ''' This function calculates the shots of spesific player when other player is on the court '''    
+    actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
+    dic = {}    
+    for actions in actions_per_game:
+        for a in actions:
+            if a.player == shooting_player and type(a) is c.Shot and action_when_on_court(a, over_player, actions):
+                shot_kind = a.kind
+                if not dic.has_key(shot_kind):
+                    dic[shot_kind] = [0, 0]
+                    
+                dic[shot_kind][0] += 1
+                if a.made:
+                    dic[a.kind][1] += 1
     return dic      
 
 
@@ -274,65 +264,51 @@ def fg_stats(shots_dic):
     
 def specific_shot_stats(shot_type='Jump Shot', players=['Felton'], team='NYK', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
     ''' '''
-    games = tf.specific_team(team, path)
+    actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
     res = []
-    for g in games:
-        h = g.find('-')
-        this_game = [0, 0, g[:h]]
-        if g[:h] > s_date and g[:h] < f_date:
-            im = tf.read_from_file(path+'\\'+g)
-            data = tf.create_data(im[0], im[1], im[2])
-            for d in data:
-                for p in players:
-                    if d.player == p and type(d) is c.Shot:
-                        #print g         
-                        if shot_type == d.kind:
-                            this_game[0] += 1
-                            if d.made:
-                                this_game[1] += 1
+    for actions in actions_per_game:
+        this_game = [0, 0]
+        for a in actions:
+            for p in players:
+                if a.player == p and type(a) is c.Shot:         
+                    if shot_type == a.kind:
+                        this_game[0] += 1   
+                        if a.made:
+                            this_game[1] += 1
         res.append(this_game)
     return res
 
         
 def shots_made_raster(players=['Duncan'], team='SAS', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
     ''' plots a made shots raster. Y axis is the number of the game. X axis is the minute in the game''' 
-    games = tf.specific_team(team, path)
+    actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
     shots, played_games = [], []
     i = 0
-    for g in games:
-        h = g.find('-')
-        if g[:h]>s_date and g[:h]<f_date:
-            i += 1
-            im = tf.read_from_file(path+'\\'+g)
-            data = tf.create_data(im[0], im[1], im[2])
-            for d in data:
-                for p in players:
-                    if d.player == p and type(d) is c.Shot:
-                            if d.made:
-                                shots.append(d.time)
-                                played_games.append(i)     
+    for actions in actions_per_game:
+        i += 1
+        for a in actions:
+            for p in players:
+                if a.player == p and type(a) is c.Shot:
+                    if a.made:
+                        shots.append(a.time)
+                        played_games.append(i)     
 
     return shots, played_games
 
 
 def actions_raster(players=['Duncan'], team='SAS', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results', action=c.Shot):
     ''' creates an actions raster. Y axis is the number of the game. X axis is the minute in the game''' 
-    games = tf.specific_team(team, path)
-    actions, played_games = [], []
+    actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
+    final_actions, played_games = [], []
     i = 0
-    for g in games:
-        h = g.find('-')
-        if g[:h]>s_date and g[:h]<f_date :
-            i += 1
-            im = tf.read_from_file(path+'\\'+g)
-            data = tf.create_data(im[0], im[1], im[2])
-            for d in data:
-                for p in players:
-                    if d.player == p and type(d) is action:
-                                actions.append(d.time)
-                                played_games.append(i)     
-
-    return actions, played_games
+    for actions in actions_per_game:
+        i += 1
+        for a in actions:
+            for p in players:
+                if a.player == p and type(a) is action:
+                    final_actions.append(a.time)
+                    played_games.append(i)     
+    return final_actions, played_games
 
 
 def actions_histogram(actions, bin_size=30.0):
@@ -345,26 +321,21 @@ def actions_histogram(actions, bin_size=30.0):
         h[int(float(a)/bin_size)] += 1
     return h
 
-
 def time_raster(player='Duncan', team='SAS', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
     ''' plots a made time raster. Y axis is the number of the game. X axis is the minute in the game'''
-    games = tf.specific_team(team, path)
-    actions, played_games = [], []
+    actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
+    time_list, played_games = [], []
     i = 0
-    for g in games:
-        h = g.find('-')
-        if g[:h] > s_date and g[:h] < f_date:
-            i += 1
-            im = tf.read_from_file(path+'\\'+g)
-            data = tf.create_data(im[0], im[1], im[2])
-            toc = time_on_court(player, data)
-            #print g, toc
-            if len(toc) != 0:
-                for t in toc:
-                    actions += tf.break_it(t)
+    for actions in actions_per_game:
+        i += 1
+        toc = time_on_court(player, actions)
+        #print g, toc
+        if len(toc) != 0:
+            for t in toc:
+                time_list += tf.break_it(t)
             played_games.append(i)
-    return actions, played_games
-
+    return time_list, played_games
+    
 
 def shots4time(player='Noah', team='CHI', s_date='20091001', f_date='20151231', path='D:\Gal\Work\Results'):
     ''' '''
@@ -590,9 +561,9 @@ def starting_5_shots(team='SAS', starting_5=['Parker', 'Green', 'Leonard', 'Dunc
 #DEBUG
 #im = tf.read_from_file(r'D:\Gal\Work\Results\20101005-DETMIA.txt')
 #s = scores(im[2], im[1])
-g = tf.create_Game('20101005-DETMIA.txt')
-plot_scores(g)
-plot_diff(g)
+#g = tf.create_game_from_file('20101005-DETMIA.txt')
+#plot_scores(g)
+#plot_diff(g)
 
 '''
 t_1 = time_out_histogram('MIA')
@@ -614,5 +585,5 @@ mpl.show()
 #for d in data:
 #    if type(d) is c.Shot :
 #        shots.append(d)
-
+#mpl.plot(time_raster2())
 #plot_scores(im[0], im[1], im[2], im[3])
