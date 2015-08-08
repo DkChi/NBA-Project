@@ -456,7 +456,6 @@ def break_it(a, i=1):
 
 
 def sort_and_remove_duplicates(a):
-    ''' '''
     a = np.sort(a)
     result = []
     for i in xrange(len(a)-1):
@@ -468,7 +467,7 @@ def sort_and_remove_duplicates(a):
 
 
 def find_timeouts(times, plays):
-    ''' '''
+    '''Returns when tere was a timeout '''
     result = []
     for i in xrange(len(plays)):
         if plays[i].find('Timeout') > 0:
@@ -504,8 +503,6 @@ def leave_these_actions(actions, a=[c.Shot]):
     return actions_1
 
 
-#_----------------------------________________________
-
 def create_game_from_file(f_name, path='D:\Gal\Work\Results'):
     ''' '''
     barket = f_name.find('-') 
@@ -514,7 +511,9 @@ def create_game_from_file(f_name, path='D:\Gal\Work\Results'):
     game.loadActions(r[0],r[1],r[2])
     return game
     
-def relevant_actions(team, path='D:\Gal\Work\Results', home=True, away=True, s_date='10000101', f_date='21001231'):
+    
+def relevant_actions(team, path='D:\Gal\Work\Results', home=True, away=True,
+                     s_date='10000101', f_date='21001231'):
     games4team = all_games_per_team(team, path, home, away)
     data = []
     for g in games4team:

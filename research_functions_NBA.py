@@ -14,7 +14,7 @@ OT_LEN = 5*60
 
 def quarter_time(q=0):
     ''' Returns the time when the quarter ends'''
-    if q<=4:
+    if q <= 4:
         return q*Q_LEN
     else :
         return 4*Q_LEN+(q-4)*OT_LEN
@@ -80,17 +80,14 @@ def time_on_court(player, actions):
     return result
 
 
-def worth_points(this_shot):
+def worth_points(shot):
     ''' '''
-    if not this_shot.made:
-        return 0  
-        
-    elif type(this_shot) is c.FreeThrow:
-        return 1
-        
-    elif not this_shot.kind=='3pt Shot':
-        return 2
-        
+    if not shot.made:
+        return 0   
+    elif type(shot) is c.FreeThrow:
+        return 1 
+    elif not shot.kind=='3pt Shot':
+        return 2     
     else:            
         return 3
     
@@ -103,6 +100,7 @@ def action_when_on_court(action, player, actions):
         if gt>np.array(t[0]) and gt<np.array(t[1]):
             return True
     return False        
+
 
 def update_current_score(cnt, shot):
     cnt['score'] += worth_points(shot)
@@ -153,8 +151,7 @@ def diff(g):
 
      
 def plot_diff(g):
-    '''plots the point difference between the home team and the visitor team '''
-      
+    '''plots the point difference between the home team and the visitor team '''  
     diff_points = diff(g)
     mpl.plot(diff_points[0], diff_points[1], 'b')
     
@@ -205,7 +202,8 @@ def shooting_stats(shots, players=[]):
     return dic  
 
 
-def shooting_stats_over_games(players=['Felton'], team='NYK', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
+def shooting_stats_over_games(players=['Felton'], team='NYK', 
+                              s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
     '''The function of dates nedd to added '''
     actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
     dic = {}    
@@ -235,7 +233,8 @@ def free_throws_stats(freeThrows, players=[]):
     return made, attempted
 
 
-def shooting_other(shooting_player='Parker', over_player='Duncan', team='SAS', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
+def shooting_other(shooting_player='Parker', over_player='Duncan', team='SAS', 
+                   s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
     ''' This function calculates the shots of spesific player when other player is on the court '''    
     actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
     dic = {}    
@@ -262,7 +261,8 @@ def fg_stats(shots_dic):
     return attempted, made
     
     
-def specific_shot_stats(shot_type='Jump Shot', players=['Felton'], team='NYK', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
+def specific_shot_stats(shot_type='Jump Shot', players=['Felton'], team='NYK',
+                        s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
     ''' '''
     actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
     res = []
@@ -279,7 +279,8 @@ def specific_shot_stats(shot_type='Jump Shot', players=['Felton'], team='NYK', s
     return res
 
         
-def shots_made_raster(players=['Duncan'], team='SAS', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
+def shots_made_raster(players=['Duncan'], team='SAS', 
+                      s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
     ''' plots a made shots raster. Y axis is the number of the game. X axis is the minute in the game''' 
     actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
     shots, played_games = [], []
@@ -296,7 +297,9 @@ def shots_made_raster(players=['Duncan'], team='SAS', s_date='10000101', f_date=
     return shots, played_games
 
 
-def actions_raster(players=['Duncan'], team='SAS', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results', action=c.Shot):
+def actions_raster(players=['Duncan'], team='SAS', 
+                   s_date='10000101', f_date='21001231', 
+                   path='D:\Gal\Work\Results', action=c.Shot):
     ''' creates an actions raster. Y axis is the number of the game. X axis is the minute in the game''' 
     actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
     final_actions, played_games = [], []
@@ -321,7 +324,8 @@ def actions_histogram(actions, bin_size=30.0):
         h[int(float(a)/bin_size)] += 1
     return h
 
-def time_raster(player='Duncan', team='SAS', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
+def time_raster(player='Duncan', team='SAS', 
+                s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
     ''' plots a made time raster. Y axis is the number of the game. X axis is the minute in the game'''
     actions_per_game = tf.relevant_actions(team, path, s_date=s_date, f_date=f_date)
     time_list, played_games = [], []
@@ -337,11 +341,14 @@ def time_raster(player='Duncan', team='SAS', s_date='10000101', f_date='21001231
     return time_list, played_games
     
 
-def shots4time(player='Noah', team='CHI', s_date='20091001', f_date='20151231', path='D:\Gal\Work\Results'):
+def shots4time(player='Noah', team='CHI', 
+               s_date='20091001', f_date='20151231', path='D:\Gal\Work\Results'):
     ''' '''
-    actions_1, played_games_1 = actions_raster(players=[player], team=team, s_date=s_date, f_date=f_date, path=path, action=c.Shot)
+    actions_1, played_games_1 = actions_raster(players=[player], team=team,
+                                               s_date=s_date, f_date=f_date, path=path, action=c.Shot)
     actions_2, played_games_2 = time_raster(player, team, s_date, f_date, path)
-    actions_3, played_games_3 = actions_raster(players=[player], team=team, s_date=s_date, f_date=f_date, path=path, action=c.FreeThrow)
+    actions_3, played_games_3 = actions_raster(players=[player], team=team, 
+                                               s_date=s_date, f_date=f_date, path=path, action=c.FreeThrow)
 
     mpl.hold(1)
     #mpl.title(player+','+team)
@@ -403,7 +410,9 @@ def action_timing(actions):
     return result
 
 
-def action_raster24(player='Duncan', team='SAS', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results', action=c.Shot):
+def action_raster24(player='Duncan', team='SAS', 
+                    s_date='10000101', f_date='21001231',
+                    path='D:\Gal\Work\Results', action=c.Shot):
     games = tf.specific_team(team, path)
     actions, played_games = [], []
     i = 0
@@ -467,7 +476,8 @@ def timeout_affection(timeouts, times, home, away, effect_time=120):
     return before, after
 
 
-def good_shots_checking(players=['James'], team='MIA', s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
+def good_shots_checking(players=['James'], team='MIA', 
+                        s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
     ''' '''
     d = shooting_stats_over_games(players, team, s_date, f_date, path)
     rank = 0
@@ -529,7 +539,9 @@ def reb_after_ft_per_team(team='SAS', path='D:\Gal\Work\Results'):
     return off_reb, allow_off_reb, len(home_games)+len(away_games)
 
 
-def starting_5_shots(team='SAS', starting_5=['Parker', 'Green', 'Leonard', 'Duncan', 'Splitter'], s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
+def starting_5_shots(team='SAS', 
+                     starting_5=['Parker', 'Green', 'Leonard', 'Duncan', 'Splitter'], 
+                     s_date='10000101', f_date='21001231', path='D:\Gal\Work\Results'):
     ''' '''
     colors = ['r', 'b', 'g', 'm', 'k']
     actions, played_games = [0]*5, [0]*5
