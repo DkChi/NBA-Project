@@ -87,7 +87,10 @@ def check_machine_for_all_players():
         k_scores.append(scores.mean())
     
     mpl.plot(k_scores, '.')
-    print np.array(k_scores).mean(),
+    print np.array(k_scores).mean()
+
+#-----------------------------------------------------------------------------
+
 
 shot_chart_url2 = 'http://stats.nba.com/stats/playerdashptshotlog?DateFrom=&'\
                   'DateTo=&GameSegment=&LastNGames=0&LeagueID=00&Location=&'\
@@ -95,7 +98,7 @@ shot_chart_url2 = 'http://stats.nba.com/stats/playerdashptshotlog?DateFrom=&'\
                   'Season={1}&SeasonSegment=&SeasonType=Regular+Season&'\
                   'TeamID=0&VsConference=&VsDivision='
 
-player_id = '1495'
+player_id = '1717'
 season = '2014-15'  
 shots1 = read_shotchartdetail(player_id, season)
 response = requests.get(shot_chart_url2.format(player_id, season))
@@ -116,12 +119,19 @@ shot_df2.sort(['GAME_ID','SHOT_NUMBER'], ascending=[False,True], inplace=True)
 shot_df2_index = pd.Series(xrange(len(shot_df2)))
 #shot_df2 = pd.concat([shot_df2, shot_df2_index], axis=1)
 
-shot_df = pd.concat([shot_df1, shot_df2], axis =1, join='inner')
+shot_df = pd.concat([shot_df1, shot_df2], axis=1, join='inner')
 
 
 
 feature_cols =  ['PERIOD', 'LOC_X', 'LOC_Y','ACTION_TYPE',
+                 #'ANGLE', 'DISTANCE']
                  'TOUCH_TIME', 'DRIBBLES', 'CLOSE_DEF_DIST']
+
+#angle = np.tan(shot_df.LOC_X/shot_df.LOC_Y)
+print shot_df.LOC_X, shot_df.LOC_Y, shot_df.SHOT_DIST
+#polar_display = pd.DataFrame([angle, distance],columns=['ANGLE', 'DISTANCE'])
+
+#shot_df = pd.concat([shot_df, polar_display], axis=1)
 x = shot_df[feature_cols]
 y = shot_df.FGM
 

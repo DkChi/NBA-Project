@@ -425,7 +425,7 @@ def movingAverage(arr, s=3):
 
 
 def normalize(t):
-    t /= np.max(np.array(t))
+    t /= np.max(np.abs(np.array(t)))
     return t
 
 
@@ -512,12 +512,21 @@ def create_game_from_file(f_name, path='D:\Gal\Work\Results'):
     return game
     
     
+def all_games_in_spec_dates(games,s_date='10000101', f_date='21001231'):
+    result = []
+    for g in games:
+        if g.date > s_date and g.date < f_date:
+            result.append(g)
+    return result
+    
+    
 def relevant_actions(team, path='D:\Gal\Work\Results', home=True, away=True,
                      s_date='10000101', f_date='21001231'):
-    games4team = all_games_per_team(team, path, home, away)
     data = []
-    for g in games4team:
-        if g.date > s_date and g.date < f_date:
+    games = all_games_per_team(team, path, home, away)
+    relevant_games = all_games_in_spec_dates(games,
+                                             s_date=s_date, f_date=f_date)
+    for g in relevant_games:
             if g.get_Home_Team() == team:
                 data.append(g.get_Home_Actions())
             else:

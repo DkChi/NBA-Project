@@ -1,10 +1,4 @@
-building functions which will bring the data from
-http://stats.nba.com/stats/playergamelog?LeagueID=00&PlayerID=1495&Season=2014-15&SeasonType=Regular+Season
+1) calculating the diffrential of the diff function vs.
+	the diferntial should be calculating based on time unit (which is given by the user)
 
-and 
-
-http://stats.nba.com/stats/playerdashptshotlog?'+ \
-    'DateFrom=&DateTo=&GameSegment=&LastNGames=0&LeagueID=00&' + \
-    'Location=&Month=0&OpponentTeamID=0&Outcome=&Period=0&' + \
-    'PlayerID=202322&Season=2014-15&SeasonSegment=&' + \
-    'SeasonType=Regular+Season&TeamID=0&VsConference=&VsDivision='
+2) creating a 3D plot of shot_dist and closest difender dist per fg%

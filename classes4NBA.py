@@ -111,7 +111,8 @@ class Game(object):
         ''' I copied this part from the TF file'''
         h_team = True
         for i, cur_time in enumerate(times):
-        #for cur_time, cur_home, cur_away in self.iter_time_vals(times, home, away):
+            cur_time = float(cur_time)
+            #for cur_time, cur_home, cur_away in self.iter_time_vals(times, home, away):
             if home[i] != '&':
                 current = str.strip(home[i])[:-1]
                 h_team = True
@@ -131,13 +132,13 @@ class Game(object):
             if 'Turnover' in current:
                 colon = current.find(':')
                 barket = current.find('(') 
-                actions.append(Turnover(times[i], player, current[colon+2:barket-1]))
+                actions.append(Turnover(cur_time, player, current[colon+2:barket-1]))
                 barket = current.find(')')
                 current = current[barket+2:]
 
 
                 if 'ST' in current:
-                    a = Steal(times[i], find_second_action(current))
+                    a = Steal(cur_time, find_second_action(current))
                     if not h_team:
                         self.home_actions.append(a)
                     else: 

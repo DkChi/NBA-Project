@@ -13,7 +13,7 @@ Q_LEN = 12
 #p = tf.get_text('http://www.nba.com/games/20150514/HOULAC/gameinfo.html')
 
 #im = tf.import_data(p)
-print rf.shooting_stats_over_games(['Duncan'], 'SAS', f_date='20110701')
+#print rf.shooting_stats_over_games(['Duncan'], 'SAS', f_date='20110701')
 #for i in s :
 #   print i, s[i], float(s[i][1])/s[i][0]*100
 #DEBUG
@@ -40,13 +40,13 @@ print rf.shooting_stats_over_games(['Duncan'], 'SAS', f_date='20110701')
 #rf.starting_5_shots(team='ATL', starting_5=['Carroll', 'Millsap', 'Horford', 'Korver', 'Teague'], s_date='20141001')
 
 #rf.shots4time('Curry', 'GSW','20141001')
-#g = tf.create_Game('20150609-GSWCLE.txt')
+#g = tf.create_game_from_file('20150609-GSWCLE.txt')
 #print g.get_date()
 #print g.get_Home_Team()
 #print g.get_Away_Team()
 #print g.get_Home_Actions()
 #print g.get_Away_Actions()
-'''
+
 actions_1, played_games_1 = rf.action_raster24('Curry', 'GSW', action=c.Shot)
 actions_2, played_games_2 = rf.action_raster24('Thompson', 'GSW', action=c.Shot)
 
@@ -63,7 +63,7 @@ mpl.plot(tf.normalize(ah_1), 'r')
 mpl.plot(tf.normalize(ah_2), 'b')
 mpl.xlim([0, 26])
 
-'''
+mpl.show()
 '''
 mpl.hold(1)
 mpl.figure(1)

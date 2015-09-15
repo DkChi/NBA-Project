@@ -102,55 +102,41 @@ def draw_court(ax=None, color='black', lw=2, outer_lines=False):
 
     return ax
 
-def add_text_col(shot_df, feature_cols, new_col):
-    i = 0
-    shot_dic = {}
-    new_col_list = []
-    for shot in shot_df[new_col]:
-        if shot not in shot_dic:
-            shot_dic[shot]= i
-            i += 1
-        new_col_list.append(shot_dic[shot])
-        
-    feature_cols.append(new_col)
-    x = np.array(shot_df[feature_cols])
-    for i in xrange(len(x)):
-        x[i][-1] = new_col_list[i]
-        
-    return x
+
+angle = np.tan(shot_df.LOC_X/shot_df.LOC_Y)
+distance = np.hypot(shot_df.LOC_X, shot_df.LOC_Y)
+
 
 sns.set_style("white")
 sns.set_color_codes()
 
 # create our jointplot
-joint_shot_chart = sns.jointplot(shot_df.LOC_X, shot_df.LOC_Y, stat_func=None,
-                                 kind='scatter', space=0, alpha=0.5)
+joint_shot_chart = sns.jointplot(angle, distance, stat_func=None,
+                                 kind='hex', space=0.01, alpha=0.8)
 
 joint_shot_chart.fig.set_size_inches(12,11)
 
 # A joint plot has 3 Axes, the first one called ax_joint 
 # is the one we want to draw our court onto and adjust some other settings
 ax = joint_shot_chart.ax_joint
-draw_court(ax)
 
 # Adjust the axis limits and orientation of the plot in order
 # to plot half court, with the hoop by the top of the plot
-ax.set_xlim(-250,250)
-ax.set_ylim(422.5, -47.5)
+
 
 # Get rid of axis labels and tick marks
 ax.set_xlabel('')
 ax.set_ylabel('')
 ax.tick_params(labelbottom='off', labelleft='off')
+ax.set_xlim(-np.pi,np.pi)
 
 # Add a title
-ax.set_title('Lebron James FGA \n2014-15 Reg. Season', 
-             y=1.2, fontsize=18)
+#ax.set_title('Lebron James FGA \n2014-15 Reg. Season', 
+#             y=1.2, fontsize=18)
 
 # Add Data Scource and Author
-ax.text(-250,445,'Data Source: stats.nba.com'
-        '\nAuthor: Savvas Tjortjoglou (savvastjortjoglou.com)',
-        fontsize=12)
+#ax.text(-250,445,'Data Source: stats.nba.com'
+#        '\nAuthor: Savvas Tjortjoglou (savvastjortjoglou.com)',
+#        fontsize=12)
 
 plt.show()
-
