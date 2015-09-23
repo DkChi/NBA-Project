@@ -17,9 +17,11 @@ import numpy as np
 import pandas as pd
 if 'C:\Anaconda\Lib\site-packages' not in sys.path :
     sys.path.append('C:\Anaconda\Lib\site-packages')
+#from mpl_toolkits.mplot3d import Axes3d
 import matplotlib.pyplot as mpl
 
-def read_shotchartdetail(player_id, season='2014-15'):
+
+def read_shotchartdetail(player_id='2544', season='2014-15'):
     shot_chart_url = 'http://stats.nba.com/stats/shotchartdetail?'\
                      'Period=0&VsConference=&LeagueID=00&LastNGames=0&TeamID=0&'\
                      'Position=&Location=&Outcome=&ContextMeasure=FGA&DateFrom=&'\
@@ -50,8 +52,7 @@ def add_text_col(shot_df, feature_cols, new_col):
         x[i][-1] = new_col_list[i]     
     return x
 
-
-def check_machine_for_all_players():
+def all_valid_palyers():
     all_players_url = 'http://stats.nba.com/stats/leaguedashplayerstats?College=&'\
                       'Conference=&Country=&DateFrom=&DateTo=&Division=&'\
                       'DraftPick=&DraftYear=&GameScope=&GameSegment=&'\
@@ -61,16 +62,24 @@ def check_machine_for_all_players():
                       'PlusMinus=N&Rank=N&Season={0}&SeasonSegment=&'\
                       'SeasonType=Regular+Season&ShotClockRange=&StarterBench=&'\
                       'TeamID=0&VsConference=&VsDivision=&Weight='.format('2014-15')
-    
-
-                  
+                    
     response = requests.get(all_players_url)
     headers = response.json()['resultSets'][0]['headers']
-    players = pd.DataFrame(response.json()['resultSets'][0]['rowSet'], columns=headers)
+    players = pd.DataFrame(response.json()['resultSets'][0]['rowSet'],
+                           columns=headers)
     players_dic = {}
-    for player, player_id, fga, gp in zip(players.PLAYER_NAME, players.PLAYER_ID, players.FGA, players.GP):
+    for player, player_id, fga, gp in zip(players.PLAYER_NAME,
+                                          players.PLAYER_ID, 
+                                          players.FGA,
+                                          players.GP):
         if gp*fga > 100:
             players_dic[player] = player_id
+            
+    return players_dic
+
+
+def machine_for_x_and_y():
+    players_dic = all_valid_palyers()
             
     from sklearn.neighbors import KNeighborsClassifier
     from sklearn.cross_validation import cross_val_score
@@ -89,60 +98,101 @@ def check_machine_for_all_players():
     mpl.plot(k_scores, '.')
     print np.array(k_scores).mean()
 
-#-----------------------------------------------------------------------------
+def machine_for_distance():
+    players_dic = all_valid_palyers()
+            
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.cross_validation import cross_val_score
+    knn = KNeighborsClassifier(n_neighbors=50) 
+    k_scores = []
+    for player, player_id in players_dic.iteritems():
+        feature_cols =  ['TOUCH_TIME', 'DRIBBLES', 'SHOT_DIST', 'CLOSE_DEF_DIST', 'PERIOD']
+        headers, shots = read_playerdashptshotlog(player_id,'2014-15')
+        shot_df = pd.DataFrame(shots, columns=headers)
+        x = shot_df[feature_cols]
+        y = shot_df.FGM
+        scores = cross_val_score(knn, x, y, cv=10, scoring='accuracy')
+        print player, player_id, scores.mean() # DEBUG
+        k_scores.append(scores.mean())
+    
+    mpl.plot(k_scores, '.')
+    print np.array(k_scores).mean()
 
 
-shot_chart_url2 = 'http://stats.nba.com/stats/playerdashptshotlog?DateFrom=&'\
+def read_playerdashptshotlog(player_id='2544',season='2014-15'):
+    shot_chart_url = 'http://stats.nba.com/stats/playerdashptshotlog?DateFrom=&'\
                   'DateTo=&GameSegment=&LastNGames=0&LeagueID=00&Location=&'\
                   'Month=0&OpponentTeamID=0&Outcome=&Period=0&PlayerID={0}&'\
                   'Season={1}&SeasonSegment=&SeasonType=Regular+Season&'\
                   'TeamID=0&VsConference=&VsDivision='
+    response = requests.get(shot_chart_url.format(player_id, season))
+    headers = response.json()['resultSets'][0]['headers']
+    return headers, response.json()['resultSets'][0]['rowSet']
+ 
+   
+def learning_by_dist(player_id='1717',season='2014-15'):
+    headers, shots = read_playerdashptshotlog(player_id, season)
+    feature_cols =  ['TOUCH_TIME', 'DRIBBLES', 'SHOT_DIST', 'CLOSE_DEF_DIST', 'PERIOD']
+    shot_df = pd.DataFrame(shots, columns=headers)
+    shot_clock = fixing_the_shot_clock(shot_df)
+    
+    shot_df = pd.concat([pd.Series(shot_clock),
+                         pd.Series(shot_clock,name='NEW_SHOT_CLOCK')], axis=1)
+    feature_cols =  ['TOUCH_TIME', 'DRIBBLES',
+                     'SHOT_DIST', 'CLOSE_DEF_DIST',
+                     'PERIOD','NEW_SHOT_CLOCK']
+    x = shot_df[feature_cols]
+    y = shot_df.FGM
+    
+    from sklearn.neighbors import KNeighborsClassifier
+    from sklearn.cross_validation import cross_val_score
+    k_range = range(1, 100)
+    k_scores = []
+    for k in k_range:
+        knn = KNeighborsClassifier(n_neighbors=k)
+        scores = cross_val_score(knn, x, y, cv=10, scoring='accuracy')
+        k_scores.append(scores.mean())
+    mpl.plot(k_range, k_scores)
+    mpl.xlabel('Value of K for KNN')
+    mpl.ylabel('Cross-Validated Accuracy')
+    mpl.show()
 
-player_id = '1717'
-season = '2014-15'  
-shots1 = read_shotchartdetail(player_id, season)
-response = requests.get(shot_chart_url2.format(player_id, season))
-headers = response.json()['resultSets'][0]['headers']
-shots2 = response.json()['resultSets'][0]['rowSet']
-feature_cols =  ['PERIOD', 'LOC_X', 'LOC_Y','SHOT_MADE_FLAG']
+    
 
-shot_df1 = pd.DataFrame(shots1[1], columns=shots1[0])
-shot_df1.sort(['GAME_ID', 'GAME_EVENT_ID'], ascending=[False,True] , inplace=True)
-shot_df1 = pd.DataFrame(add_text_col(shot_df1, feature_cols, 'ACTION_TYPE'),
-                        columns=feature_cols)
-                       
-shot_df1_index = pd.Series(xrange(len(shot_df1)))
-#shot_df1 = pd.concat([shot_df1, shot_df1_index], axis=1)                        
-
-shot_df2 = pd.DataFrame(shots2, columns=headers)
-shot_df2.sort(['GAME_ID','SHOT_NUMBER'], ascending=[False,True], inplace=True)
-shot_df2_index = pd.Series(xrange(len(shot_df2)))
-#shot_df2 = pd.concat([shot_df2, shot_df2_index], axis=1)
-
-shot_df = pd.concat([shot_df1, shot_df2], axis=1, join='inner')
+def fixing_the_shot_clock(shot_df):
+    shot_clock = list(shot_df.SHOT_CLOCK)
+    new_shot_clock = []
+    for s in shot_clock:
+        if not np.isnan(s):
+            new_shot_clock.append(s)
+        else:
+            new_shot_clock.append(-1)
+    return new_shot_clock
+    
+    
+    
+#-----------------------------------------------------------------------------
 
 
+#learning_by_dist()
+#machine_for_x_and_y()
+player_id ='202738'
 
-feature_cols =  ['PERIOD', 'LOC_X', 'LOC_Y','ACTION_TYPE',
-                 #'ANGLE', 'DISTANCE']
-                 'TOUCH_TIME', 'DRIBBLES', 'CLOSE_DEF_DIST']
+headers, shots = read_shotchartdetail(player_id)
+shot_df_x_y = pd.DataFrame(shots, columns=headers)
 
-#angle = np.tan(shot_df.LOC_X/shot_df.LOC_Y)
-print shot_df.LOC_X, shot_df.LOC_Y, shot_df.SHOT_DIST
-#polar_display = pd.DataFrame([angle, distance],columns=['ANGLE', 'DISTANCE'])
+headers1, shots1 = read_playerdashptshotlog(player_id)
+shot_df_dist = pd.DataFrame(shots1, columns=headers1)
 
-#shot_df = pd.concat([shot_df, polar_display], axis=1)
-x = shot_df[feature_cols]
-y = shot_df.FGM
+shot_df_x_y.sort(columns=['GAME_ID','GAME_EVENT_ID'],inplace=True)
 
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.cross_validation import cross_val_score
-k_range = range(1, 100)
-k_scores = []
-for k in k_range:
-    knn = KNeighborsClassifier(n_neighbors=k)
-    scores = cross_val_score(knn, x, y, cv=10, scoring='accuracy')
-    k_scores.append(scores.mean())
-mpl.plot(k_range, k_scores)
-mpl.xlabel('Value of K for KNN')
-mpl.ylabel('Cross-Validated Accuracy')
+
+shot_df_dist.sort(columns=['GAME_ID','SHOT_NUMBER'],inplace=True)
+array_dist = np.array(shot_df_dist)
+shot_df = pd.concat([shot_df_x_y,pd.DataFrame(array_dist,columns=headers1)],
+                     axis=1,join='inner')
+
+print shot_df.GAME_ID
+print shot_df.FGM-shot_df.SHOT_MADE_FLAG
+
+ 

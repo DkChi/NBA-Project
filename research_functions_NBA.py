@@ -8,16 +8,13 @@ if 'D:\Gal\Work' not in sys.path :
 import classes4NBA as c
 import technical_functions_NBA as tf
 
-Q_LEN = 12*60
-OT_LEN = 5*60
-
 
 def quarter_time(q=0):
     ''' Returns the time when the quarter ends'''
     if q <= 4:
-        return q*Q_LEN
+        return q*c.Q_LEN
     else :
-        return 4*Q_LEN+(q-4)*OT_LEN
+        return 4*c.Q_LEN+(q-4)*c.OT_LEN
 
 
 def time_on_court(player, actions):
@@ -107,6 +104,12 @@ def update_current_score(cnt, shot):
     cnt['index'] += 1
     return cnt
 
+def update_shot_and_counter(shots, cnt):
+    ''' '''
+    this_shot = shots[cnt['index']]
+    cnt = update_current_score(cnt, this_shot)
+    return this_shot, cnt
+
 
 def scores(game):
     ''' 
@@ -121,20 +124,16 @@ def scores(game):
         if cnt_home['index'] < len(home_shots) and cnt_away['index'] < len(away_shots):
             
             if float(away_shots[cnt_away['index']].time) > float(home_shots[cnt_home['index']].time) :
-                this_shot = home_shots[cnt_home['index']]
-                cnt_home = update_current_score(cnt_home, this_shot)
+                this_shot, cnt_home = update_shot_and_counter(home_shots, cnt_home)                
                 
             else:
-                this_shot = away_shots[cnt_away['index']]
-                cnt_away = update_current_score(cnt_away, this_shot)
+                this_shot, cnt_away = update_shot_and_counter(away_shots, cnt_away)
                 
         elif cnt_away['index'] == len(away_shots):
-            this_shot = home_shots[cnt_home['index']]
-            cnt_home = update_current_score(cnt_home, this_shot)
+            this_shot, cnt_home = update_shot_and_counter(home_shots, cnt_home)
                 
         else:
-            this_shot = away_shots[cnt_away['index']]
-            cnt_away = update_current_score(cnt_away, this_shot)
+            this_shot, cnt_away = update_shot_and_counter(away_shots, cnt_away)
                     
         #print this_shot.time,hp,ap, type(this_shot)
         times.append(this_shot.time)
@@ -165,7 +164,7 @@ def plot_diff(g):
     mpl.xlabel('Time (in seconds)')
     mpl.ylabel('Point Differntial')
     mpl.grid(axis='x') 
-    mpl.xticks(np.arange(1, 5)*Q_LEN)
+    mpl.xticks(np.arange(1, 5)*c.Q_LEN)
     mpl.yticks(limits)
     mpl.title(g.title())
     mpl.show()
@@ -181,7 +180,7 @@ def plot_scores(g):
     mpl.xlabel('Time (in seconds)')
     mpl.ylabel('Points')
     mpl.grid(axis='x') 
-    mpl.xticks(np.arange(1, 5)*Q_LEN)
+    mpl.xticks(np.arange(1, 5)*c.Q_LEN)
     mpl.title(g.title())
     mpl.show()
 
@@ -362,14 +361,14 @@ def shots4time(player='Noah', team='CHI',
 
     mpl.figure(2)
     mpl.title(player+','+team)
-    mpl.figtext(0, 0.5, 'blue - shots \nred - presentce on court\nmagenta - freethrows')
+    mpl.figtext(0, 0.5, 'blue - shots \n'+'red - presentce on court\n'+'magenta - freethrows')
     mpl.plot(tf.normalize(tf.movingAverage(actions_histogram(actions_1), 3)), 'b')
     mpl.plot(tf.normalize(tf.movingAverage(actions_histogram(actions_2), 3)), 'r')
     mpl.plot(tf.normalize(tf.movingAverage(actions_histogram(actions_3), 3)), 'm')
     mpl.xlabel('Time (in half minutes)')
     mpl.ylabel('Points')
     mpl.grid(axis='x')
-    mpl.xticks(np.arange(1, 5)*Q_LEN/30)
+    mpl.xticks(np.arange(1, 5)*c.Q_LEN/30)
     mpl.show()
 
 

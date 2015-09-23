@@ -14,12 +14,21 @@ import classes4NBA as c
 # can be reached as <a href="/games/20140530/INDMIA/gameinfo.html" 
 #title="Link to game info for Indiana Pacers vs. Miami Heat">Complete Stats</a> from  [http://www.nba.com/gameline/20140530/
 
-Q_LEN = 12*60
-OT_LEN = 5*60
+c.Q_LEN = 12*60
+c.OT_LEN = 5*60
+
+atlantic_teams = ['BOS', 'BKN', 'NYK', 'PHI', 'TOR']
+central_teams = ['CHI', 'IND', 'DET', 'CLE', 'MIL']
+southeast_teams = ['ATL', 'CHA', 'MIA', 'ORL', 'WAS']
+southwest_teams = ['DAL', 'SAS', 'HOU', 'MEM', 'NOP']
+pacific_teams = ['LAL', 'LAC', 'GSW', 'PHX', 'SAC']
+northwest_teams = ['DEN', 'MIN', 'OKC', 'POR', 'UTA']
+all_teams = atlantic_teams + central_teams + southeast_teams + southwest_teams + pacific_teams + northwest_teams
 
 # ______________________________________
 # Technical Functions
 # ______________________________________
+
 
 
 def get_text(page):
@@ -106,7 +115,7 @@ def merge_actions(al1, al2):
             flag = 2
         elif i2 == len(al2):
             flag = 1    
-        elif al1[i1].get_time() < al2[i2].get_time():
+        elif al1[i1] < al2[i2]:
             flag = 1
                     
         if flag == 1 :
@@ -172,7 +181,7 @@ def read_from_file(path):
     return np.array(times), home, away
                                                                                                                                                                                                                           
 
-def starting5(text=get_text('http://www.nba.com/games/20130618/SASMIA/gameinfo.html')):
+def starting5(text):
     '''This function checks who were the startings fives for a spesific game '''
     regex ='<td id="nbaGIBoxNme" class="b"><a href="/playerfile/(.+?)</a></td>'
     pattern = re.compile(regex)
@@ -184,7 +193,7 @@ def starting5(text=get_text('http://www.nba.com/games/20130618/SASMIA/gameinfo.h
     return fix_2_5[:5], fix_2_5[5:]
 
 
-def find_links_in_page(text=get_text('http://www.nba.com/gameline/20140501/')):
+def find_links_in_page(text):
     ''' 
     This function returns a list of all the links to the game pages from a spesific page
     The links are in format "/games/20140502/TORBKN/gameinfo.html"
@@ -349,35 +358,6 @@ def all_games_per_team(team, path='D:\Gal\Work\Results', home=True, away=True):
     return res
     
 
-def date2numbers(date):
-    ''' date is by the format  MONTH DAY, YEAR'''
-    months = {'January': 1,
-              'February': 2,
-              'March': 3,
-              'April': 4,
-              'May': 5,
-              'June': 6,
-              'July': 7,
-              'August': 8,
-              'September': 9,
-              'October': 10,
-              'November': 11,
-              'December': 12}
-    first_space = date.find(' ')
-    m = str(months[date[:first_space]])
-    if int(m) < 10:
-        m = '0'+m
-    comma = date.find(',')
-    d = date[first_space+1:comma]
-    if int(d) < 10:
-        d = '0'+d
-    y = date[comma+2:]
-    return y+m+d
-
-
-def date2numbersv2(date):
-    ''' date is by the format  yyyymmdd'''
-    return (int(date[:4])-2009)*365+(int(date[4:6])-1)*31+int(date[6:])
 
 
 def all_players():
@@ -412,7 +392,7 @@ def active_players(players):
 
 
 def movingAverage(arr, s=3):
-    ''' Return a moving average of a based on the size s '''
+    ''' Return a moving average of arr, based on the size s '''
     a = []
     for i in arr:
         a.append(float(i))

@@ -1,5 +1,6 @@
 import numpy as np
 from collections import namedtuple
+import datetime
 
 Action = namedtuple('Action', ['time','player'])
 Shot = namedtuple('Shot', Action._fields+('kind','made',))
@@ -41,6 +42,7 @@ class ActionTiming(object):
 Q_LEN = 12*60
 OT_LEN = 5*60
 
+
 def find_second_action(current):
     '''This function finds the second action in a play by play line (actions like assists and blocks and steals) '''
     s = 1
@@ -79,7 +81,7 @@ def min2time(t):
 class Game(object):
     ''' This Class Represent a Single game'''
     
-    def __init__(self, homeTeam='HHH',awayTeam='AAA',date='10010101'):
+    def __init__(self, homeTeam='HHH', awayTeam='AAA', date='10000101'):
         self.homeTeam = homeTeam
         self.awayTeam = awayTeam
         self.date = date
@@ -108,11 +110,10 @@ class Game(object):
             yield cur_time, home[i], away[i]
             
     def loadActions(self, times, home, away):
-        ''' I copied this part from the TF file'''
+        ''' load the actions from list of strings'''
         h_team = True
         for i, cur_time in enumerate(times):
             cur_time = float(cur_time)
-            #for cur_time, cur_home, cur_away in self.iter_time_vals(times, home, away):
             if home[i] != '&':
                 current = str.strip(home[i])[:-1]
                 h_team = True
