@@ -2,17 +2,17 @@
 import urllib2
 import re
 import numpy as np
-import matplotlib.pyplot as mpl
-from bs4  import BeautifulSoup as bs
 import os
 import sys
-if 'D:\Gal\Work' not in sys.path :
+from bs4 import BeautifulSoup as bs
+if 'D:\Gal\Work' not in sys.path:
     sys.path.append('D:\Gal\Work')
 import classes4NBA as c
 
-# link structure :  http://www.nba.com/games/  DATE: YYYYMMDD  / AwayTeam HomeTeam / gameinfo.html
+# link structure: http://www.nba.com/games/
+#                       YYYYMMDD/AwayTeamHomeTeam/gameinfo.html
 # can be reached as <a href="/games/20140530/INDMIA/gameinfo.html" 
-#title="Link to game info for Indiana Pacers vs. Miami Heat">Complete Stats</a> from  [http://www.nba.com/gameline/20140530/
+# title="Link to game info for Indiana Pacers vs. Miami Heat">Copltete Stats</a> from  [http://www.nba.com/gameline/20140530/
 
 c.Q_LEN = 12*60
 c.OT_LEN = 5*60
@@ -25,19 +25,14 @@ pacific_teams = ['LAL', 'LAC', 'GSW', 'PHX', 'SAC']
 northwest_teams = ['DEN', 'MIN', 'OKC', 'POR', 'UTA']
 all_teams = atlantic_teams + central_teams + southeast_teams + southwest_teams + pacific_teams + northwest_teams
 
-# ______________________________________
-# Technical Functions
-# ______________________________________
 
-
-
+# Functions that deal with web pages and text
+# --------------------------------------------
 def get_text(page):
     try:
         return urllib2.urlopen(page).read()
     finally:
         return urllib2.urlopen(page).read()
-
-# now I need a function to run over pages from the type http://www.nba.com/gameline/20140501/
 
 
 def import_data(text):
@@ -80,107 +75,17 @@ def get_details(player):
     return height
 
 
-def merge2sets(time_1, data_1, time_2, data_2):
-    ''' This function merges the two sets of lists into one set'''
-    i1, i2 = 0, 0
-    data_result, time_result = [], []
-    while i1 < len(time_1) or i2 < len(time_2):
-        flag = 2
-        if i1 == len(time_1):
-            flag = 2    
-        elif i2 == len(time_2):
-            flag = 1    
-        elif time_1[i1] < time_2[i2]:
-            flag = 1
-            
-        if flag == 1:
-            time_result.append(time_1[i1])
-            data_result.append(data_1[i1])
-            i1 += 1
-        else:
-            time_result.append(time_2[i2])
-            data_result.append(data_2[i2])
-            i2 += 1
-            
-    return np.array(time_result), data_result
-
-
-def merge_actions(al1, al2):
-    ''' '''
+def bring_players_from_espn(text):
+    ''' built for pages like http://espn.go.com/nba/players/_/position/pg '''
+    regex = r'"http://espn.go.com/nba/player/_/id(.+?)</a>'
+    pattern = re.compile(regex)
+    players_1 = re.findall(pattern, text)
     res = []
-    i1, i2, flag = 0, 0, 1
-    while i1 < len(al1) or i2 < len(al2):
-        flag = 2
-        if i1 == len(al1):
-            flag = 2
-        elif i2 == len(al2):
-            flag = 1    
-        elif al1[i1] < al2[i2]:
-            flag = 1
-                    
-        if flag == 1 :
-            res.append(al1[i1])
-            i1 += 1
-        else:
-            res.append(al2[i2])
-            i2 += 1
+    for i in players_1:
+        res.append(i[i.rfind('>')+1:])
+    return res
 
-    return res     
-
-
-def write_data(times, home, away, title='???', path='D:\Gal\Work\Results'):
-    '''This function writes to file a data of a singal game '''
-    f = open(path+'\\'+title+'.txt', 'wb')
-    for i in xrange(len(times)):
-        f.write(str(times[i]) + ',' + home[i] + ',' + away[i] + '\n')
-    f.close()
-
-
-def write_details(players, details, path='D:\Gal\Work\Results'):
-    ''' '''
-    f = open(path+'\\'+'players_details.txt', 'wb')
-    for i in xrange(len(players)):
-        details2write = ''
-        for d in details[i]:
-            details2write += d+','
-        f.write(players[i] + ',' + details2write[:-1] + '\n')
-    f.close()
-
-
-def read_details(path='D:\Gal\Work\Results\players_details.txt'):
-    ''' '''
-    f = open(path, 'rb')
-    lines = f.readlines()
-    results = {}
-    for line in lines:
-        l = line
-        second_comma = l.find(',', l.find(',')+1)
-        l = l[second_comma+1:]
-        d = []
-        while l.find(',') > 0:
-            d.append(l[:l.find(',')])
-            l = l[l.find(',')+1:]
-        d.append(l[:-1])
-        results[line[:second_comma]] = d
-
-    return results
-
-
-def read_from_file(path):
-    '''This function reads the data from file '''
-    f = open(path, 'rb')
-    lines = f.readlines()
-    times, home, away = [], [], []
-    for line in lines:
-        l = line.find(',')
-        r = line.rfind(',')
-        times.append(line[:l])
-        away.append(line[l+1:r])        
-        home.append(line[r+1:-1])
-    f.close()
-    return np.array(times), home, away
-                                                                                                                                                                                                                          
-
+                                                                                                                                                   
 def starting5(text):
     '''This function checks who were the startings fives for a spesific game '''
     regex ='<td id="nbaGIBoxNme" class="b"><a href="/playerfile/(.+?)</a></td>'
@@ -238,128 +143,6 @@ def bring_all_data(s_date='20091001', f_date='20091117'):
     return links
 
 
-def write_all_data(s_date='20140101', f_date='20140717'):
-    ''' '''
-    link = r'http://www.nba.com/games/'
-    extras = bring_all_data(s_date, f_date)
-    for e in extras:
-        print link+e
-        p = e.rfind('/')
-        im = import_data(get_text(link+e))
-        write_data(im[0], im[1], im[2], e[:p].replace('/', '-'))
-        print e[:p]
-        
-
-def create_data(times, home, away):
-    '''
-    IN PROGRESS
-    need to be add :  Timeouts
-    '''
-    data = []
-    for i in xrange(len(times)):
-        flag = True
-        if home[i] != '&':
-            current = home[i]
-        elif away[i] != '&':
-            current = away[i]                
-        else:
-            flag = False
-        
-        if flag:
-            current = current[1:-1]
-            first_space = current.find(' ')
-            player = current[:first_space]
-            current = current[first_space+1:]
-            
-            if "Turnover" in current:
-                colon = current.find(':')
-                barket = current.find('(')
-                data.append(c.Turnover(current[colon+2:barket-1], times[i], player))
-                barket = current.find(')')
-                current = current[barket+2:]
-
-                if 'ST' in current:
-                    data.append(c.Steal(times[i], c.find_second_action(current)))
-   
-            elif 'Substitution' in current:
-                last_space = current.rfind(' ')
-                data.append(c.Sub(times[i], player, current[last_space+1:]))
-                 
-            elif 'shot' in current or 'Shot' in current:
-                colon = current.find(':')
-                action = c.Shot(current[:colon], times[i], player)
-                if 'Made' in current:
-                    action.set_status(True)
-                else:
-                    action.set_status(False)
-
-                data.append(action)
-
-                if 'AST' in current:
-                    data.append(c.Assist(times[i], c.find_second_action(current)))
-
-                elif 'BLK' in current:
-                    data.append(c.Block(times[i], c.find_second_action(current)))
-
-            elif 'PF' in current:
-                colon = current.find(':')
-                barket = current.find('(')
-                data.append(c.Foul(current[colon+2:barket-1], times[i], player))
-
-            elif 'Free Throw' in current:
-                first_space = current.find(' ')
-                action = c.FreeThrow(times[i], player)
-                if not 'Missed' in current:
-                    action.set_status(True)
-                else:
-                    action.set_status(False)
-                data.append(action)
-
-            elif 'Rebound' in current:
-                if home[i] != '&':
-                    if home[i-1] == '&':
-                        kind = 'Def'
-                    else:
-                        kind = 'Off'
-                else:
-                    if home[i-1] == '&':
-                        kind = 'Off'
-                    else:
-                        kind = 'Def'
-                first_space = current.find(' ')
-                data.append(c.Rebound(kind, times[i], player))
-
-    return data         
-
-
-def specific_team(team, path='D:\Gal\Work\Results', home=True, away=True):
-    ''' This function return a list of all the files that that represent game of a specific team '''
-    NAME_LEN = 3
-    files = os.listdir(path)
-    res = []
-    for f in files:
-        h = f.find('-')
-        nxt = h+NAME_LEN+1
-        if (f[h+1:nxt] == team and away) or (f[nxt:nxt+NAME_LEN] == team and home):
-            res.append(f)
-    return res
-
-
-def all_games_per_team(team, path='D:\Gal\Work\Results', home=True, away=True):
-    res = []
-    list_of_home_games = specific_team(team, path, home, False)
-    list_of_away_games = specific_team(team, path, False, away)
-    for g in list_of_home_games:
-        res.append(create_game_from_file(g))
-        
-    for g in list_of_away_games:
-        res.append(create_game_from_file(g))
-        
-    return res
-    
-
-
-
 def all_players():
     ''' Finds all the players in the NBA'''
     LINK = r'http://stats.nba.com/players.html'
@@ -389,6 +172,58 @@ def active_players(players):
             #print 'Error :', p
             his_players.append(p)
     return ac_players, his_players    
+
+
+# Technical functions without straight connection to the NBA
+# --------------------------------------------
+
+
+def merge2sets(time_1, data_1, time_2, data_2):
+    ''' This function merges the two sets of lists into one set'''
+    i1, i2 = 0, 0
+    data_result, time_result = [], []
+    while i1 < len(time_1) or i2 < len(time_2):
+        flag = 2
+        if i1 == len(time_1):
+            flag = 2    
+        elif i2 == len(time_2):
+            flag = 1    
+        elif time_1[i1] < time_2[i2]:
+            flag = 1
+            
+        if flag == 1:
+            time_result.append(time_1[i1])
+            data_result.append(data_1[i1])
+            i1 += 1
+        else:
+            time_result.append(time_2[i2])
+            data_result.append(data_2[i2])
+            i2 += 1
+            
+    return np.array(time_result), data_result
+
+
+def merge_actions(al1, al2):
+    ''' '''
+    res = []
+    i1, i2, flag = 0, 0, 1
+    while i1 < len(al1) or i2 < len(al2):
+        flag = 2
+        if i1 == len(al1):
+            flag = 2
+        elif i2 == len(al2):
+            flag = 1    
+        elif al1[i1] < al2[i2]:
+            flag = 1
+                    
+        if flag == 1 :
+            res.append(al1[i1])
+            i1 += 1
+        else:
+            res.append(al2[i2])
+            i2 += 1
+
+    return res     
 
 
 def movingAverage(arr, s=3):
@@ -429,9 +264,10 @@ def glue_arrays(a, i=0):
 
 
 def break_it(a, i=1):
-    '''Breaks the list in the Arithmetic progression with the step of i 
-    Example: break_it([1,5],1) >>>> [1,2,3,4,5] '''
-    
+    '''
+    Breaks the list in the Arithmetic progression with the step of i
+    Exaplte: break_it([1,5],1) >>>> [1,2,3,4,5]
+    '''
     return list(range(int(a[0]), int(a[1]+1), i))
 
 
@@ -446,15 +282,6 @@ def sort_and_remove_duplicates(a):
     return result
 
 
-def find_timeouts(times, plays):
-    '''Returns when tere was a timeout '''
-    result = []
-    for i in xrange(len(plays)):
-        if plays[i].find('Timeout') > 0:
-            result.append(times[i])
-    return result
-
-
 def distance(a, b):
     result = 0
     for i in xrange(np.min([len(a), len(b)])):
@@ -462,26 +289,73 @@ def distance(a, b):
     return result
 
 
-def bring_players_from_espn(text):
-    ''' built for pages like http://espn.go.com/nba/players/_/position/pg '''
-    regex = r'"http://espn.go.com/nba/player/_/id(.+?)</a>'
-    pattern = re.compile(regex)
-    players_1 = re.findall(pattern, text)
-    res = []
-    for i in players_1:
-        res.append(i[i.rfind('>')+1:])
-    return res
+# Read and Write functions
+# --------------------------
+
+def write_data(times, home, away, title='???', path='D:\Gal\Work\Results'):
+    '''This function writes to file a data of a singal game '''
+    f = open(path+'\\'+title+'.txt', 'wb')
+    for i in xrange(len(times)):
+        f.write(str(times[i]) + ',' + home[i] + ',' + away[i] + '\n')
+    f.close()
 
 
-def leave_these_actions(actions, a=[c.Shot]):
-    ''' This fuctions goes aver the a list of actions and leave only the actions which is given as prameter'''
-    actions_1 = []
-    for i in xrange(len(actions)):
-        if type(actions[i]) in  a:
-            actions_1.append(actions[i])
-       
-    return actions_1
+def write_details(players, details, path='D:\Gal\Work\Results'):
+    ''' '''
+    f = open(path+'\\'+'players_details.txt', 'wb')
+    for i in xrange(len(players)):
+        details2write = ''
+        for d in details[i]:
+            details2write += d+','
+        f.write(players[i] + ',' + details2write[:-1] + '\n')
+    f.close()
 
+
+def read_details(path='D:\Gal\Work\Results\players_details.txt'):
+    ''' '''
+    f = open(path, 'rb')
+    lines = f.readlines()
+    results = {}
+    for line in lines:
+        l = line
+        second_comma = l.find(',', l.find(',')+1)
+        l = l[second_comma+1:]
+        d = []
+        while l.find(',') > 0:
+            d.append(l[:l.find(',')])
+            l = l[l.find(',')+1:]
+        d.append(l[:-1])
+        results[line[:second_comma]] = d
+
+    return results
+
+
+def read_from_file(path):
+    '''This function reads the data from file '''
+    f = open(path, 'rb')
+    lines = f.readlines()
+    times, home, away = [], [], []
+    for line in lines:
+        l = line.find(',')
+        r = line.rfind(',')
+        times.append(line[:l])
+        away.append(line[l+1:r])        
+        home.append(line[r+1:-1])
+    f.close()
+    return np.array(times), home, away
+                                                                       
+
+def write_all_data(s_date='20140101', f_date='20140717'):
+    ''' '''
+    link = r'http://www.nba.com/games/'
+    extras = bring_all_data(s_date, f_date)
+    for e in extras:
+        print link+e
+        p = e.rfind('/')
+        im = import_data(get_text(link+e))
+        write_data(im[0], im[1], im[2], e[:p].replace('/', '-'))
+        print e[:p]
+ 
 
 def create_game_from_file(f_name, path='D:\Gal\Work\Results'):
     ''' '''
@@ -498,8 +372,61 @@ def all_games_in_spec_dates(games,s_date='10000101', f_date='21001231'):
         if g.date > s_date and g.date < f_date:
             result.append(g)
     return result
-    
-    
+
+
+# Functions which relevant to the NBA
+# ------------------------------------
+
+def specific_team(team, path='D:\Gal\Work\Results', home=True, away=True):
+    '''
+    This function return a list of all the files that represent game of a specific team
+    '''
+    NAME_LEN = 3
+    files = os.listdir(path)
+    res = []
+    for f in files:
+        h = f.find('-')
+        nxt = h+NAME_LEN+1
+        if (f[h+1:nxt] == team and away) or (f[nxt:nxt+NAME_LEN] == team and home):
+            res.append(f)
+    return res
+
+
+def all_games_per_team(team, path='D:\Gal\Work\Results', home=True, away=True):
+    res = []
+    list_of_home_games = specific_team(team, path, home, False)
+    list_of_away_games = specific_team(team, path, False, away)
+    for g in list_of_home_games:
+        res.append(create_game_from_file(g))
+
+    for g in list_of_away_games:
+        res.append(create_game_from_file(g))
+
+    return res
+
+
+def find_timeouts(times, plays):
+    '''Returns when tere was a timeout '''
+    result = []
+    for i in xrange(len(plays)):
+        if plays[i].find('Timeout') > 0:
+            result.append(times[i])
+    return result
+
+
+def leave_these_actions(actions, a=[c.Shot]):
+    '''
+    This fuctions goes aver the a list of actions
+    also leave only the actions which is given as prameter
+    '''
+    actions_1 = []
+    for i in xrange(len(actions)):
+        if type(actions[i]) in a:
+            actions_1.append(actions[i])
+
+    return actions_1
+
+
 def relevant_actions(team, path='D:\Gal\Work\Results', home=True, away=True,
                      s_date='10000101', f_date='21001231'):
     data = []
@@ -511,18 +438,4 @@ def relevant_actions(team, path='D:\Gal\Work\Results', home=True, away=True,
                 data.append(g.get_Home_Actions())
             else:
                 data.append(g.get_Away_Actions())
-    return data    
-    
-#________________________________
-# MAIN
-#________________________________
-'''
-a_players, h_players = active_players(sort_and_remove_duplicates(all_players()))
-d_players = []
-for p in a_players:
-    comma = p.find(',')
-    pl = p[comma+2:] + ' ' + p[:comma]
-    d_players.append(get_details(pl))
-
-write_details(a_players, d_players)
-'''
+    return data

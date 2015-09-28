@@ -86,7 +86,7 @@ def machine_for_x_and_y():
     knn = KNeighborsClassifier(n_neighbors=50) 
     k_scores = []
     for player, player_id in players_dic.iteritems():
-        feature_cols =  ['PERIOD', 'LOC_X', 'LOC_Y']
+        feature_cols = ['PERIOD', 'LOC_X', 'LOC_Y']
         print player, player_id
         shots = read_shotchartdetail(player_id,'2014-15')
         shot_df = pd.DataFrame(shots[1], columns=shots[0])
@@ -97,6 +97,7 @@ def machine_for_x_and_y():
     
     mpl.plot(k_scores, '.')
     print np.array(k_scores).mean()
+
 
 def machine_for_distance():
     players_dic = all_valid_palyers()
@@ -146,7 +147,7 @@ def learning_by_dist(player_id='1717',season='2014-15'):
     
     from sklearn.neighbors import KNeighborsClassifier
     from sklearn.cross_validation import cross_val_score
-    k_range = range(1, 100)
+    k_range = xrange(1, 100)
     k_scores = []
     for k in k_range:
         knn = KNeighborsClassifier(n_neighbors=k)
@@ -176,23 +177,24 @@ def fixing_the_shot_clock(shot_df):
 
 #learning_by_dist()
 #machine_for_x_and_y()
-player_id ='202738'
+player_id ='0'
+read_shotchartdetail(player_id)
+shots = read_shotchartdetail(player_id,'2014-15')
+shot_df = pd.DataFrame(shots[1], columns=shots[0])
+feature_cols = ['PERIOD', 'LOC_X', 'LOC_Y', 'PLAYER_ID']
+x = add_text_col(shot_df, feature_cols, 'ACTION_TYPE')
+y = shot_df.SHOT_MADE_FLAG
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.cross_validation import cross_val_score
+k_range = xrange(1, 100)
+k_scores = []
 
-headers, shots = read_shotchartdetail(player_id)
-shot_df_x_y = pd.DataFrame(shots, columns=headers)
-
-headers1, shots1 = read_playerdashptshotlog(player_id)
-shot_df_dist = pd.DataFrame(shots1, columns=headers1)
-
-shot_df_x_y.sort(columns=['GAME_ID','GAME_EVENT_ID'],inplace=True)
-
-
-shot_df_dist.sort(columns=['GAME_ID','SHOT_NUMBER'],inplace=True)
-array_dist = np.array(shot_df_dist)
-shot_df = pd.concat([shot_df_x_y,pd.DataFrame(array_dist,columns=headers1)],
-                     axis=1,join='inner')
-
-print shot_df.GAME_ID
-print shot_df.FGM-shot_df.SHOT_MADE_FLAG
-
- 
+for k in k_range:
+    knn = KNeighborsClassifier(n_neighbors=k)
+    scores = cross_val_score(knn, x, y, cv=10, scoring='accuracy')
+    k_scores.append(scores.mean())
+    
+mpl.plot(k_range, k_scores)
+mpl.xlabel('Value of K for KNN')
+mpl.ylabel('Cross-Validated Accuracy')
+mpl.show()
