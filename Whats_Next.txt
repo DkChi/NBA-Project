@@ -1,4 +1,0 @@
-1) calculating the diffrential of the diff function vs.
-	the diferntial should be calculating based on time unit (which is given by the user)
-
-2) creating a 3D plot of shot_dist and closest difender dist per fg%
