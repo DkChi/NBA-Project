@@ -175,7 +175,7 @@ def active_players(players):
 
 
 # Technical functions without straight connection to the NBA
-# --------------------------------------------
+# -----------------------------------------------------------
 
 
 def merge2sets(time_1, data_1, time_2, data_2):
@@ -289,7 +289,7 @@ def distance(a, b):
     return result
 
 
-# Read and Write functions
+# Read and write functions
 # --------------------------
 
 def write_data(times, home, away, title='???', path='D:\Gal\Work\Results'):
